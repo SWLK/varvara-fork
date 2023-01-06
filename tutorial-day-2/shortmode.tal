@@ -1,0 +1,12 @@
+( shortmode.tal )
+( devices )
+|10 @Console
+	[ &vec $2 &read $1 &pad $5 &write $1 &err $1 ]
+
+( macros )
+%EMIT { .Console/write DEO }
+
+( main )
+|0100
+#0230 ADD EMIT
+( LIT2 02 30 ADD EMIT )

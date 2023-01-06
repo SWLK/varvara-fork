@@ -1,0 +1,75 @@
+( hello-sprite.tal )
+
+( devices )
+|00 @System
+	[ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+|20 @Screen
+	[ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
+
+( macros )
+%SET-X { .Screen/x DEO2 }
+%RESET-X { #0008 SET-X }
+%SET-Y { .Screen/y DEO2 }
+%RESET-Y { #0008 SET-Y }
+%INC-X { .Screen/x DEI2 #0008 ADD2 SET-X }
+%INC-Y { .Screen/y DEI2 #0008 ADD2 SET-Y }
+
+( main )
+|0100
+	( set system colors )
+	#2ce9 .System/r DEO2
+	#01c0 .System/g DEO2
+	#2ce5 .System/b DEO2
+
+	( set x, y coordinates )
+	RESET-X
+	RESET-Y
+
+	( set sprite address )
+	;square .Screen/addr DEO2
+
+	( draw sprite in the bg )
+	( using color 1 for the outline )
+	#10 .Screen/sprite DEO
+	INC-X
+	#11 .Screen/sprite DEO
+	INC-X
+	#12 .Screen/sprite DEO
+	INC-X
+	#13 .Screen/sprite DEO
+	RESET-X
+
+	INC-Y
+	#14 .Screen/sprite DEO
+	INC-X
+	#15 .Screen/sprite DEO
+	INC-X
+	#16 .Screen/sprite DEO
+	INC-X
+	#17 .Screen/sprite DEO
+	RESET-X
+
+	INC-Y
+	#18 .Screen/sprite DEO
+	INC-X
+	#19 .Screen/sprite DEO
+	INC-X
+	#1a .Screen/sprite DEO
+	INC-X
+	#1b .Screen/sprite DEO
+	RESET-X
+
+	INC-Y
+	#1c .Screen/sprite DEO
+	INC-X
+	#1d .Screen/sprite DEO
+	INC-X
+	#1e .Screen/sprite DEO
+	INC-X
+	#1f .Screen/sprite DEO
+	RESET-X
+BRK
+
+@square
+	017f 7b73 6343 7fff ( low )
+	007c 7c7c 7c7c 0000 ( high )

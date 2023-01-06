@@ -1,0 +1,26 @@
+( hello-revised.tal )
+
+( devices )
+|10 @Console
+	[ &vec $2 &read $1 &pad $5 &write $1 &err $1 ]
+
+( macros )
+%EMIT { .Console/write DEO }
+%NL { #0a EMIT }
+%SPC { #20 EMIT }
+
+( main )
+|0100
+LIT "h EMIT
+LIT "e EMIT
+LIT "l EMIT
+LIT "l EMIT
+LIT "o EMIT
+SPC
+LIT "w EMIT
+LIT "o EMIT
+LIT "r EMIT
+LIT "l EMIT
+LIT "d EMIT
+LIT "! EMIT
+NL
