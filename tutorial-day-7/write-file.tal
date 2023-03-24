@@ -1,0 +1,47 @@
+( write-file.tal )
+
+( devices )
+|10 @Console
+	[ &vector $2 &read $1 &pad $5 &write $1 &error $1 ]
+
+|a0 @File0 
+	[ &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2 ]
+
+|b0 @File1
+	[ &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2 ]
+
+( macros )
+%RTN { JMP2r }
+
+( zero page )
+( -- )
+
+( main )
+|0100
+@main ( -- )
+	;save-file JSR2
+
+BRK
+
+@save-file ( -- )
+	;file/name .File0/name DEO2 ( set file name )
+	#0006 .File0/length DEO2 ( will attempt to write 6 bytes )
+
+	( set data starting address, and do write )
+	;file/data .File0/write DEO2
+
+	( read and evaluate success byte )
+	.File0/success DEI2 #0006 NEQ2 ,&failed JCN
+
+	&success
+		LIT "Y .Console/write DEO
+	RTN
+
+	&failed
+		LIT "N .Console/write DEO
+RTN
+
+( data )
+@file
+	&name "test.txt 00
+	&data "hello 0a

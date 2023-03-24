@@ -1,0 +1,53 @@
+( read-theme.tal )
+
+( devices )
+|00 @System
+	[ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+
+|10 @Console
+	[ &vector $2 &read $1 &pad $5 &write $1 &error $1 ]
+
+|a0 @File0 
+	[ &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2 ]
+
+|b0 @File1
+	[ &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2 ]
+
+( macros )
+%RTN { JMP2r }
+
+( zero page )
+( -- )
+
+( main )
+|0100
+@main ( -- )
+	;load-theme JSR2
+
+BRK
+
+@load-theme ( -- )
+	;theme/name .File0/name DEO2 ( set address of file path )
+	#0006 .File0/length DEO2 ( will attempt to read 6 bytes )
+
+	( set address for the data to read, and do read )
+	;theme/data .File0/read DEO2
+
+	( check the success byte and jump accordingly )
+	.File0/success DEI2 #0006 NEQ2 ,&failed JCN
+
+	&success
+		( set the system colors from the read data )
+		;theme/r LDA2 .System/r DEO2
+		;theme/g LDA2 .System/g DEO2
+		;theme/b LDA2 .System/b DEO2
+	RTN
+
+	&failed
+RTN
+
+( data )
+@theme
+	&name "test.theme 00
+	&data ( reserving 6 bytes for the data )
+	&r $2 &g $2 &b $2

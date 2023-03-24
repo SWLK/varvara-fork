@@ -1,0 +1,311 @@
+( hello-pong.tal )
+
+( devices )
+|00 @System
+	[ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+
+|20 @Screen
+	[ &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
+
+|80 @Controller
+	[ &vector $2 &button $1 &key $1 ]
+
+( macros )
+%RTN { JMP2r }
+%WALL-MARGIN { #0010 }
+%MARGIN { #0010 }
+%PADDLE-WIDTH { #0010 } ( 2 tiles )
+%PADDLE-HEIGHT { #0018 } ( 3 tiles )
+%PADDLE-COLOR { #c5 }
+%PADDLE-SPEED { #0001 }
+%CLEAR-COLOR { #40 }
+%BG-COLOR { #03 }
+%HALF2 { #01 SFT2 } ( short -- short/2 )
+%BALL-SIZE { #0010 } ( 2 tiles per side )
+%BALL-COLOR { #c5 }
+%BALL-POSITIVE-SPEED { #0001 } ( +1 )
+%BALL-NEGATIVE-SPEED { #ffff } ( -1 )
+
+( zero page )
+|0000
+	@left [ &x $2 &y $2 ]
+	@right [ &x $2 &y $2 ]
+	@ball [ &x $2 &y $2 &speed-x $2 &speed-y $2 ]
+
+( main program )
+|0100
+@setup ( -- )
+	( set system colors )
+	#2ce9 .System/r DEO2
+	#01c0 .System/g DEO2
+	#2ce5 .System/b DEO2
+
+	( draw background )
+	;draw-background JSR2
+
+	( init paddles )
+	;init-paddles JSR2
+
+	( init ball --TEST-- )
+	.Screen/width DEI2 BALL-SIZE SUB2 HALF2 .ball/x STZ2
+	.Screen/height DEI2 BALL-SIZE SUB2 HALF2 .ball/y STZ2
+
+	BALL-POSITIVE-SPEED .ball/speed-x STZ2
+	BALL-POSITIVE-SPEED .ball/speed-y STZ2
+
+	( draw and refresh paddles )
+	;on-frame .Screen/vector DEO2
+BRK
+
+@draw-background ( -- )
+	;tile-background .Screen/addr DEO2 ( set tile address )
+	( y loop entry )
+
+	.Screen/height DEI2 WALL-MARGIN SUB2 ( set limit )
+	WALL-MARGIN ( initial y val )
+	&loop-y
+	DUP2 .Screen/y DEO2 ( set y coordinate )
+
+		( x loop entry )
+
+		.Screen/width DEI2 #0000 ( set limit and initial x )
+		&loop-x
+			DUP2 .Screen/x DEO2 ( set x coordinate )
+			BG-COLOR .Screen/sprite DEO ( draw 1bpp sprite with color 3 and 0 )
+			#0008 ADD2 ( increment x )
+			GTH2k ( is the width greater than x? aka is x less than the limit )
+			,&loop-x JCN ( jump if x is less than the limit )
+		POP2 POP2 ( remove x and limit )
+
+		( x loop exit )
+	
+	#0008 ADD2
+	GTH2k ( check height greater than y )
+	,&loop-y JCN
+	POP2 POP2
+
+	( y loop exit )
+RTN
+
+@draw-paddle ( x^ y^ color -- )
+	( save color )
+	STH
+
+	( set initial y and x )
+	.Screen/y DEO2
+	.Screen/x DEO2
+
+	( set first sprite address )
+	;paddle-sprite .Screen/addr DEO2
+
+	( auto byte )
+	( length: +1 sprite )
+	( set auto addr and auto y )
+	#16 .Screen/auto DEO
+
+	( get color from return stack )
+	STHr
+
+	( draw three rows )
+	.Screen/sprite DEOk DEOk DEO
+RTN
+
+@init-paddles ( -- )
+	( set x coords )
+	MARGIN .left/x STZ2
+	.Screen/width DEI2 MARGIN SUB2 PADDLE-WIDTH SUB2
+	.right/x STZ2
+
+	( set y coords )
+	.Screen/height DEI2 PADDLE-HEIGHT SUB2 HALF2 DUP2
+	.left/y STZ2
+	.right/y STZ2
+
+RTN
+
+@update-paddles ( -- )
+	&left
+		( left paddle: up and down buttons )
+		.Controller/button DEI
+		DUP #10 AND ( check bit for up )
+		,&left-up JCN
+		DUP #20 AND ( check bit for down )
+		,&left-down JCN
+
+	,&right JMP ( jump if neither of them were pressed )
+
+	&left-up
+		.left/y LDZ2 PADDLE-SPEED SUB2 .left/y STZ2
+		,&right JMP
+	&left-down
+		.left/y LDZ2 PADDLE-SPEED ADD2 .left/y STZ2
+		,&right JMP
+
+	&right
+		( right paddle: ctrl/A and alt/B buttons )
+		DUP #01 AND ( check bit for A )
+		,&right-up JCN
+		DUP #02 AND ( check bit for B )
+		,&right-down JCN
+
+	,&end JMP ( jump if neither of them were pressed )
+
+	&right-up
+		.right/y LDZ2 PADDLE-SPEED SUB2 .right/y STZ2
+		,&end JMP
+	&right-down
+		.right/y LDZ2 PADDLE-SPEED ADD2 .right/y STZ2
+
+	&end
+		POP ( pop duplicate value of button )
+RTN
+
+@draw-ball ( color -- )
+	( store ball color )
+	STH
+
+	( set sprite address )
+	;ball-sprite .Screen/addr DEO2
+	
+	( set auto bit )
+	( length: +1 sprite )
+	( addr + y )
+	#16 .Screen/auto DEO
+
+	.ball/x LDZ2 .Screen/x DEO2
+	.ball/y LDZ2 .Screen/y DEO2
+
+	STHr .Screen/sprite DEOk DEO
+RTN
+
+@update-ball ( -- )
+	( get speed-x and x )
+	.ball/speed-x LDZ2 .ball/x LDZ2
+	ADD2 ( add them together )
+	.ball/x STZ2
+
+	( get speed-y and y )
+	.ball/speed-y LDZ2 .ball/y LDZ2
+	ADD2
+	.ball/y STZ2
+
+	&check-top-wall
+		.ball/y LDZ2
+		WALL-MARGIN
+		LTH2 ( is ball-y less than the margin? )
+		,&set-positive-speed JCN
+		,&check-bottom-wall JMP
+
+		&set-positive-speed
+			BALL-POSITIVE-SPEED .ball/speed-y STZ2
+			,&continue JMP
+	
+	&check-bottom-wall
+		.ball/y LDZ2 BALL-SIZE ADD2 ( y + ball size )
+		.Screen/height DEI2
+		WALL-MARGIN SUB2 ( height - margin )
+		GTH2 ( is the ball-y greater than the wall-y? )
+		,&set-negative-speed JCN
+		,&continue JMP
+
+		&set-negative-speed
+			BALL-NEGATIVE-SPEED .ball/speed-y STZ2
+
+	&continue
+
+	&check-left-paddle
+		.ball/x LDZ2
+		MARGIN PADDLE-WIDTH ADD2
+		LTH2 ( is ball-x less than the margin + paddle-width )
+		,&x-in-left JCN
+		,&check-right-paddle JMP
+
+		&bounce-left
+			BALL-POSITIVE-SPEED .ball/speed-x STZ2
+			,&return JMP
+
+		&x-in-left
+			.ball/y LDZ2 DUP2
+			.left/y LDZ2 BALL-SIZE SUB2 GTH2 ( first flag ) STH
+			.left/y LDZ2 PADDLE-HEIGHT ADD2 LTH2 ( second flag )
+			STHr ( retrieve first flag )
+			AND ( AND the two flags together )
+			,&bounce-left JCN
+
+		&reset-left
+			( implement score count mechanism here )
+			;reset JSR2
+			,&return JMP
+
+	&check-right-paddle
+		.ball/x LDZ2 BALL-SIZE ADD2 ( ball-x + ball-size )
+		.Screen/width DEI2 MARGIN SUB2 PADDLE-WIDTH SUB2
+		GTH2 ( is ball-x greater than the screen-width - margin - paddle-width )
+		,&x-in-right JCN
+		,&return JMP
+
+		&bounce-right
+			BALL-NEGATIVE-SPEED .ball/speed-x STZ2
+			,&return JMP
+
+		&x-in-right
+			.ball/y LDZ2 DUP2
+			.right/y LDZ2 BALL-SIZE SUB2 GTH2 ( first flag ) STH
+			.right/y LDZ2 PADDLE-HEIGHT ADD2 LTH2 ( second flag )
+			STHr ( retrieve first flag )
+			AND ( AND the two flags together )
+			,&bounce-right JCN
+
+		&reset-right
+			( define right score count mechanism here )
+			;reset JSR2
+			,&return JMP
+
+
+	&return
+RTN
+
+@reset ( -- )
+	( initialize ball )
+	.Screen/width DEI2 BALL-SIZE SUB2
+	HALF2 .ball/x STZ2
+	.Screen/height DEI2 BALL-SIZE SUB2
+	HALF2 .ball/y STZ2
+RTN
+
+@on-frame ( -> )
+	( clear paddles )
+	.left/x LDZ2 .left/y LDZ2 CLEAR-COLOR ;draw-paddle JSR2
+	.right/x LDZ2 .right/y LDZ2 CLEAR-COLOR ;draw-paddle JSR2
+
+	( movement IO )
+	;update-paddles JSR2
+
+	( draw paddles )
+	.left/x LDZ2 .left/y LDZ2 PADDLE-COLOR ;draw-paddle JSR2
+	.right/x LDZ2 .right/y LDZ2 PADDLE-COLOR ;draw-paddle JSR2
+
+	( clear ball )
+	CLEAR-COLOR ;draw-ball JSR2
+
+	( update ball )
+	;update-ball JSR2
+
+	( draw ball )
+	BALL-COLOR ;draw-ball JSR2
+BRK
+
+( data section )
+@tile-background 1122 4488 1122 4488
+@paddle-sprite
+	&tile0 [ 3f 7f e7 c3 c3 c3 c3 c3  00 00 18 3c 3c 3c 3c 3c ]
+	&tile1 [ fc fe ff ff ff ff ff ff  00 00 00 00 00 00 06 06 ]
+	&tile2 [ c3 c3 c3 c3 e7 ff ff ff  3c 3c 3c 3c 18 00 00 00 ]
+	&tile3 [ ff ff ff ff ff ff ff ff  06 06 06 06 06 06 06 06 ]
+	&tile4 [ ff ff ff ff ff ff 7f 3f  00 00 00 00 00 00 00 00 ]
+	&tile5 [ ff ff ff ff ff ff fe fc  06 06 06 06 06 1e 3c 00 ]
+@ball-sprite
+	&tile0 [ 03 0f 1f 39 70 70 f9 ff  00 00 00 06 0f 0f 06 00 ]
+	&tile1 [ c0 f0 f8 fc fe fe ff ff  00 00 00 00 08 0c 06 06 ]
+	&tile2 [ ff ff 7f 7f 3f 1f 0f 03  00 00 00 00 18 0f 01 00 ]
+	&tile3 [ ff ff fe fe fc f8 f0 c0  06 06 0c 1c 38 f0 c0 00 ]

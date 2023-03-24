@@ -1,0 +1,44 @@
+( hello-mouse.tal )
+
+( devices )
+|00 @System
+	[ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+
+|20 @Screen
+	[ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
+
+|90 @Mouse
+	[ &vector $2 &x $2 &y $2 &state $1 &pad $3 &scrollx $2 &scrolly $2 ]
+
+( init )
+|0100
+	( set system colors )
+	#2ce9 .System/r DEO2
+	#01c0 .System/g DEO2
+	#2ce5 .System/b DEO2
+
+	( set mouse vector )
+	;on-mouse .Mouse/vector DEO2
+
+	( set sprite address )
+	;square .Screen/addr DEO2
+BRK
+
+@on-mouse ( -> )
+	.Mouse/x DEI2 .Screen/x DEO2
+	.Mouse/y DEI2 .Screen/y DEO2
+
+	( jump if any button is pressed )
+	.Mouse/state DEI ,&pressed JCN
+
+	( draw sprite using color 2 and 0 in background )
+	#02 .Screen/sprite DEO
+
+	BRK ( <- conditional end )
+
+	&pressed
+		( draw sprite using color 1 and 0 in background )
+		#01 .Screen/sprite DEO
+BRK
+
+@square [ ff81 8181 8181 81ff ]
