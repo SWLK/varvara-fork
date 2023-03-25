@@ -1,0 +1,9 @@
+( template-lib.tal )
+
+( lib )
+@print ( str* -- )
+	&while
+		( send ) LDAk PRINTC
+		( loop ) INC2 LDAk ,&while JCN
+RTN
+

@@ -1,0 +1,24 @@
+( template-main.tal )
+
+
+( zero page )
+( -- )
+
+( devices )
+~template-devices.tal
+
+( macros )
+~template-macros.tal
+
+( main )
+|0100
+@main ( -- )
+	;hello ;print JSR2
+BRK
+
+( lib )
+~template-lib.tal
+
+( data )
+~template-data.tal
+

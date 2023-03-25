@@ -1,0 +1,6 @@
+( template-macros.tal )
+
+( macros )
+%RTN { JMP2r }
+%PRINTC { .Console/write DEO }
+
