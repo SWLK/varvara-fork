@@ -1,0 +1,18 @@
+( template-macros.tal )
+
+( macros )
+%RTN { JMP2r }
+%PRINTC { .Console/write DEO }
+%SCR-BORDER { #0008 }
+%FG-COLOR1 { #41 }
+%FG-COLOR2 { #42 }
+%FG-COLOR3 { #43 }
+%UPDATE-CURSOR-X { .cursor/x STZ2 }
+%UPDATE-CURSOR-Y { .cursor/y STZ2 }
+%UPDATE-SCREEN-X { .Screen/x DEO2 }
+%UPDATE-SCREEN-Y { .Screen/y DEO2 }
+%LINE-SPACE { #000c }
+%LINE-HEIGHT { #0010 }
+%SYNC-CURSOR-SCREEN-X { .cursor/x LDZ2 .Screen/x DEO2 }
+%SYNC-CURSOR-SCREEN-Y { .cursor/y LDZ2 .Screen/y DEO2 }
+%SYNC-CURSOR-SCREEN { SYNC-CURSOR-SCREEN-X SYNC-CURSOR-SCREEN-Y }

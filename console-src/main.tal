@@ -1,0 +1,35 @@
+( main.tal )
+
+( devices )
+~template-devices.tal
+
+( macros )
+~console-macros.tal
+
+( zero page )
+|0000
+	@cursor [ &x $2 &y $2 ]
+	@stdin [ &on $1 ]
+
+
+( main )
+|0100
+@main ( -- )
+	;setup JSR2
+
+	;show-prompt JSR2
+
+	;kb-handler .Controller/vector DEO2
+	;stdin-handler .Console/vector DEO2
+BRK
+
+
+( lib )
+~console-lib.tal
+~commands-lib.tal
+
+( data )
+~console-data.tal
+
+( font )
+~sample.uf2.tal

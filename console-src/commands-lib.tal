@@ -1,0 +1,68 @@
+( commands-lib.tal )
+
+( lib )
+
+( ================ vm to bash output routing =================== )
+@write2buffer ( char -- )
+	;buffer/cache #00 ;buffer/count LDA ADD2 ( inc addr pos )
+	STA
+	
+	;buffer/count DUP2 STH2 LDA INC STH2r STA
+RTN
+
+@process-buffer ( -- )
+	;buffer/cache
+
+	&while
+		( print char to console and increment address )
+		DUP2 
+		LDA .Console/write DEO
+		INC2 
+
+		( decrement count and end if 0 )
+		;buffer/count LDA #01 SUB DUP
+		#00 EQU ,&end JCN
+		;buffer/count STA ( * should be merged )
+		,&while JMP
+
+	&end
+		;buffer/count STA ( * should be merged )
+		POP2
+		#0a .Console/write DEO
+RTN
+
+@backtrace-buffer ( -- )
+	;buffer/count
+
+	( check if count is 0 )
+	DUP2 LDA #00 EQU ,&end JCN
+
+	( decrement count )
+	DUP2 STH2 LDA #01 SUB STH2r STA
+
+	&end
+RTN
+
+( ================= bash to vm input routing ================== )
+
+@stdin-handler ( -> vec* )
+	.stdin/on LDZ #00 EQU ,&end JCN
+
+	.Console/read DEI
+
+	( test )
+	DUP #00 EQU ,&off JCN
+	DUP #0a EQU ,&nl JCN
+
+	;ascii2uf2 JSR2 ;draw-glyph-color3 JSR2
+	,&end JMP
+
+	&nl
+		;console-nl JSR2
+		,&end JMP
+
+	&off
+		#00 .stdin/on STZ
+		;show-prompt JSR2
+	&end
+BRK

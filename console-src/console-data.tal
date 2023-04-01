@@ -1,0 +1,7 @@
+( console-data.tal )
+
+( data )
+( prompt )
+@prompt "ash "> 00
+
+@buffer [ &count $1 &cache $0100 ]

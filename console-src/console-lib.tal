@@ -1,0 +1,167 @@
+( console-lib.tal )
+
+( lib )
+@setup ( -- )
+	( set system colors )
+	( bg: #202020 )
+	( fg: #e0e0e0 )
+	( c1: #ff9933 )
+	( c2: #ff3333 )
+	#2eff .System/r DEO2
+	#2e93 .System/g DEO2
+	#2e33 .System/b DEO2
+
+	( set screen size )
+	#01e0 .Screen/height DEO2
+	#0280 .Screen/width DEO2
+
+	( set x and y initial position )
+	SCR-BORDER DUP2 UPDATE-CURSOR-X UPDATE-SCREEN-X
+	SCR-BORDER DUP2 UPDATE-CURSOR-Y UPDATE-SCREEN-Y
+
+	( instantiate buffer )
+	#00 ;buffer/count STA
+	;process-buffer JSR2 ( 1st time address call inconsistency )
+	( ^ temporary but necessary solution )
+
+	( instantiate stdin stream switch )
+	#00 .stdin/on STZ
+RTN
+
+
+@print-char ( color char* -- )
+	#15 .Screen/auto DEO
+	.Screen/addr DEO2
+	.Screen/sprite DEOk DEO
+RTN
+	
+
+@draw-glyph-color1 ( char* -- )
+	STH2 #41 STH2r ;print-char JSR2
+
+	( set next cursor position )
+	.cursor/x LDZ2 LINE-SPACE ADD2 DUP2 UPDATE-CURSOR-X
+	UPDATE-SCREEN-X
+	.cursor/y LDZ2 UPDATE-SCREEN-Y
+RTN
+
+
+@draw-glyph-color2 ( char* -- )
+	STH2 #42 STH2r ;print-char JSR2
+
+	( set next cursor position )
+	.cursor/x LDZ2 LINE-SPACE ADD2 DUP2 UPDATE-CURSOR-X
+	UPDATE-SCREEN-X
+	.cursor/y LDZ2 UPDATE-SCREEN-Y
+RTN
+
+
+@draw-glyph-color3 ( char* -- )
+	STH2 #43 STH2r ;print-char JSR2
+
+	( set next cursor position )
+	.cursor/x LDZ2 LINE-SPACE ADD2 DUP2 UPDATE-CURSOR-X
+	UPDATE-SCREEN-X
+	.cursor/y LDZ2 UPDATE-SCREEN-Y
+RTN
+
+
+@clear-glyph ( -- )
+	.cursor/x LDZ2 ( load cursor x-pos )
+	DUP2 #0038
+	EQU2 ,&ignore JCN ( if at start of line )
+
+	( set screen and cursor position to PREV - LINE-SPACE )
+	LINE-SPACE SUB2 DUP2 UPDATE-CURSOR-X UPDATE-SCREEN-X
+
+	( print clear block )
+	#40 ;font/bs ;print-char JSR2
+
+	( set next cursor position )
+	SYNC-CURSOR-SCREEN
+	,&end JMP
+
+	&ignore
+		POP2
+
+	&end
+RTN
+
+
+@console-nl ( -- )
+	( add line height to cursor y )
+	.cursor/y LDZ2 LINE-HEIGHT ADD2
+	UPDATE-CURSOR-Y
+
+	( reset x to screen border )
+	SCR-BORDER UPDATE-CURSOR-X
+
+	SYNC-CURSOR-SCREEN
+
+	( if buffer length count is not at 0, output buffer )
+	;buffer/count LDA #00 EQU ,&end JCN
+	;process-buffer JSR2
+
+	&end
+RTN
+
+@ascii2uf2 ( ascii -> uf2 )
+	#00 SWP
+	#0020 SUB2
+	#0020 MUL2
+	;font/space ADD2
+RTN
+
+@show-prompt ( -- )
+	;prompt DUP2
+	
+	&while
+		LDA DUP #00 EQU ,&end JCN
+		;ascii2uf2 JSR2 ;draw-glyph-color2 JSR2
+		INC2 DUP2 ,&while JMP
+	&end
+		POP POP2
+RTN
+
+@kb-handler ( -> vec* )
+	.Controller/key DEI ( take keyboard keycode )
+
+	( check for non-printable chars )
+	
+	DUP #08 EQU ,&backspace JCN ( check BS )
+	DUP #0d EQU ,&carriage JCN ( check CR )
+
+	#20 LTHk ,&ignore JCN POP ( ignore if less than 0x20 )
+
+	( printable chars )
+	( ;font/glyph starts at space/ascii 0x20 )
+
+	( store char in buffer )
+	DUP ;write2buffer JSR2
+
+	( draw char on screen )
+	;ascii2uf2 JSR2 ;draw-glyph-color1 JSR2
+	,&end JMP
+
+	&backspace
+		POP
+		;backtrace-buffer JSR2
+		;clear-glyph JSR2
+		,&end JMP
+
+	&carriage
+		POP
+		;console-nl JSR2
+
+		( wait for output test ============== )
+		#01 .stdin/on STZ
+		( end test =========================== )
+
+		,&end JMP
+
+	&ignore
+		POP2
+
+	&end
+BRK
+
