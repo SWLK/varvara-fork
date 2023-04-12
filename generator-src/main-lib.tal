@@ -1,0 +1,125 @@
+( main-lib.tal )
+
+( lib )
+
+( controller vector subroutine )
+@controller-vector ( *vec -- )
+	.Controller/key DEI
+
+	.octave LDZ
+	#0c DIV
+	STH
+
+	DUP #7a EQU ,&z JCN
+	DUP #78 EQU ,&x JCN
+	DUP #63 EQU ,&c JCN
+	DUP #76 EQU ,&v JCN
+	DUP #62 EQU ,&b JCN
+	DUP #6e EQU ,&n JCN
+	DUP #6d EQU ,&m JCN
+
+	DUP #73 EQU ,&s JCN
+	DUP #64 EQU ,&d JCN
+	DUP #67 EQU ,&g JCN
+	DUP #68 EQU ,&h JCN
+	DUP #6a EQU ,&j JCN
+	STHr POP ;functions JSR2 BRK ( <-- pseudo end jump )
+
+	&z STHr #0c MUL ,&output JMP
+	&x STHr #0c MUL #02 ADD ,&output JMP
+	&c STHr #0c MUL #04 ADD ,&output JMP
+	&v STHr #0c MUL #05 ADD ,&output JMP
+	&b STHr #0c MUL #07 ADD ,&output JMP
+	&n STHr #0c MUL #09 ADD ,&output JMP
+	&m STHr #0c MUL #0b ADD ,&output JMP
+	&s STHr #0c MUL #01 ADD ,&output JMP
+	&d STHr #0c MUL #03 ADD ,&output JMP
+	&g STHr #0c MUL #06 ADD ,&output JMP
+	&h STHr #0c MUL #08 ADD ,&output JMP
+	&j STHr #0c MUL #0a ADD ,&output JMP
+
+	&output
+	DUP .octave STZ
+	;audio-out JSR2
+	;render-octave JSR2
+	POP
+BRK
+
+@audio-out ( midi -- )
+	#ff .Audio1/adsr DEO
+	#ff .Audio1/volume DEO
+	#0100 .Audio1/length DEO2
+
+	.waves LDZ
+	DUP #04 SFT STH
+
+	#0f AND
+	DUP #08 EQU ,&sine JCN
+	DUP #04 EQU ,&tri JCN
+	DUP #02 EQU ,&saw JCN
+	DUP #01 EQU ,&square JCN
+
+	&sine
+		;sin-pcm .Audio1/addr DEO2
+		,&sustain JMP
+
+	&tri
+		;tri-pcm .Audio1/addr DEO2
+		,&sustain JMP
+
+	&saw
+		;saw-pcm .Audio1/addr DEO2
+		,&sustain JMP
+
+	&square
+		;piano-pcm .Audio1/addr DEO2
+		,&sustain JMP
+
+	&sustain
+		POP
+		STHr #01 EQU ,&end JCN
+		#80 ADD
+
+	&end
+		.Audio1/pitch DEO
+RTN
+
+@functions ( keycode -- )
+	( comma, period: octave controls )
+	DUP #2c EQU ,&octave-down JCN
+	DUP #2e EQU ,&octave-up JCN
+	,&other JMP
+	&octave-down .octave LDZ
+	DUP #18 LTH ,&no-change JCN
+	#0c SUB .octave STZ ;render-octave JSR2 ,&end JMP
+	&octave-up .octave LDZ 
+	DUP #6b GTH ,&no-change JCN
+	#0c ADD .octave STZ ;render-octave JSR2 ,&end JMP
+
+	&no-change POP ,&end JMP
+
+	&other
+	( forward slash: waveform toggle )
+	DUP #2f EQU ,&toggle-waveform JCN
+
+	( space: sustain toggle )
+	DUP #20 EQU ,&toggle-sustain JCN
+	,&end JMP
+
+	&toggle-waveform
+	.waves LDZ
+	DUP #44 SFT STH
+	#0f AND #01 SFT
+	DUP #00 GTH ,&continue JCN
+	POP #08
+	&continue
+	STHr ORA .waves STZ ;render-indicators JSR2
+	,&end JMP
+
+	&toggle-sustain
+	.waves LDZ
+	#10 EOR .waves STZ ;render-indicators JSR2
+
+	&end
+		POP
+RTN

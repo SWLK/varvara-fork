@@ -1,0 +1,31 @@
+( template-main.tal )
+
+
+( zero page )
+|0000
+	@bpm $1 
+	@octave $1 ( midi format )
+	@waves $1 ( 0001: sus, 1111: sine tri saw square )
+	@sustain $1
+
+( devices )
+~template-devices.tal
+
+( macros )
+~generator-macros.tal
+
+( main )
+|0100
+@main ( -- )
+	;setup JSR2
+
+	;controller-vector .Controller/vector DEO2
+BRK
+
+( lib )
+~render-lib.tal
+~main-lib.tal
+
+( data )
+~generator-data.tal
+

@@ -12,8 +12,8 @@
 	#2e33 .System/b DEO2
 
 	( set screen size )
-	#01e0 .Screen/height DEO2
-	#0280 .Screen/width DEO2
+	SCR-HEIGHT .Screen/height DEO2
+	SCR-WIDTH .Screen/width DEO2
 
 	( set x and y initial position )
 	SCR-BORDER DUP2 UPDATE-CURSOR-X UPDATE-SCREEN-X

@@ -1,0 +1,25 @@
+( template-macros.tal )
+
+( macros )
+%RTN { JMP2r }
+%PRINTC { .Console/write DEO }
+%SUS-POS { #0018 #0040 .Screen/y DEO2 .Screen/x DEO2 }
+%SINE-POS { #0030 #0040 .Screen/y DEO2 .Screen/x DEO2 }
+%TRI-POS { #0040 #0040 .Screen/y DEO2 .Screen/x DEO2 }
+%SAW-POS { #0050 #0040 .Screen/y DEO2 .Screen/x DEO2 }
+%SQUARE-POS { #0060 #0040 .Screen/y DEO2 .Screen/x DEO2 }
+
+%C { #00 }
+%d { #01 }
+%D { #02 }
+%e { #03 }
+%E { #04 }
+%F { #05 }
+%g { #06 }
+%G { #07 }
+%a { #08 }
+%A { #09 }
+%b { #0a }
+%B { #0b }
+
+%SET-POS { .Screen/y DEO2 .Screen/x DEO2 }

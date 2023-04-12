@@ -1,0 +1,300 @@
+( render-lib.tal )
+
+( lib )
+@setup ( -- )
+
+	( set screen dimensions )
+	#0080 .Screen/width DEO2
+	#0080 .Screen/height DEO2
+
+	( set initial x and y cordinates )
+	#0000 .Screen/x DEO2
+	#0000 .Screen/y DEO2
+
+	( set default colors )
+	#00ff .System/r DEO2
+	#0ce2 .System/g DEO2
+	#0984 .System/b DEO2
+
+	;draw-border JSR2
+
+	( set and render bpm )
+	#86 .bpm STZ
+
+	;render-bpm JSR2
+
+	( set and render octave )
+	#3c .octave STZ
+
+	;render-octave JSR2
+
+	( render wave signs )
+	;draw-sustain-indicator JSR2
+	;draw-sine-sign JSR2
+	;draw-triangle-sign JSR2
+	;draw-saw-sign JSR2
+	;draw-square-sign JSR2
+
+	( render wave indicators )
+	#18 .waves STZ
+	;render-indicators JSR2
+
+	( render piano keys )
+	;draw-piano-key JSR2
+
+	;draw-octave-controller JSR2
+RTN
+
+@draw-border ( -- )
+	( draw top row )
+	;tiles/border .Screen/addr DEO2
+
+	#01 .Screen/auto DEO
+
+	#41 .Screen/sprite 
+	DEOk DEOk DEOk DEOk DEOk DEOk DEOk DEOk
+	DEOk DEOk DEOk DEOk DEOk DEOk DEOk DEO
+
+	( draw bottom row )
+	#0000 .Screen/x DEO2
+	.Screen/height DEI2 #0008 SUB2 .Screen/y DEO2
+
+	#41 .Screen/sprite 
+	DEOk DEOk DEOk DEOk DEOk DEOk DEOk DEOk
+	DEOk DEOk DEOk DEOk DEOk DEOk DEOk DEO
+
+	( draw left column )
+
+	#02 .Screen/auto DEO
+
+	#0008 .Screen/y DEO2
+	#0000 .Screen/x DEO2
+
+	#41 .Screen/sprite
+	DEOk DEOk DEOk DEOk DEOk DEOk DEOk DEOk
+	DEOk DEOk DEOk DEOk DEOk DEO
+
+	( draw right column )
+	#0008 .Screen/y DEO2
+	.Screen/width DEI2 #0008 SUB2 .Screen/x DEO2
+
+	#41 .Screen/sprite
+	DEOk DEOk DEOk DEOk DEOk DEOk DEOk DEOk
+	DEOk DEOk DEOk DEOk DEOk DEO
+RTN
+
+@render-bpm ( -- )
+	#0018 .Screen/x DEO2
+	#0018 .Screen/y DEO2
+
+	#01 .Screen/auto DEO
+
+	.bpm LDZ
+	DUP #64 DIV ( 100 count )
+	DUP #08 MUL #00 SWP ;tiles/zero ADD2 .Screen/addr DEO2
+
+	#43 .Screen/sprite DEO
+	#64 MUL SUB ( get remainder )
+
+	DUP #0a DIV ( 10 count )
+	DUP #08 MUL #00 SWP ;tiles/zero ADD2 .Screen/addr DEO2
+
+	#43 .Screen/sprite DEO
+	#0a MUL SUB ( get remainder )
+
+	#08 MUL #00 SWP ;tiles/zero ADD2 .Screen/addr DEO2
+	
+	#43 .Screen/sprite DEO
+	#00 .Screen/auto DEO
+RTN
+
+@render-octave ( -- )
+	#0050 .Screen/x DEO2
+	#0018 .Screen/y DEO2
+	#01 .Screen/auto DEO
+
+	.octave LDZ
+	DUP STH 
+	#0c DIV ( 12 count )
+	DUP #0c MUL STHr SWP SUB ( 1 count )
+	#08 MUL #00 SWP ;tiles/C ADD2 .Screen/addr DEO2
+	#43 .Screen/sprite DEO
+
+	#01 SUB #08 MUL #00 SWP ;tiles/zero ADD2 .Screen/addr DEO2
+	#43 .Screen/sprite DEO
+	#00 .Screen/auto DEO
+RTN
+
+@draw-sustain-indicator ( -- )
+	;tiles/sustain .Screen/addr DEO2
+
+	#0018 .Screen/x DEO2
+	#0030 .Screen/y DEO2
+
+	#41 .Screen/sprite DEO
+RTN
+
+@draw-sine-sign ( -- )
+	;tiles/sign-sine .Screen/addr DEO2
+
+	#0030 .Screen/x DEO2
+	#0030 .Screen/y DEO2
+
+	#42 .Screen/sprite DEO
+RTN
+
+@draw-triangle-sign ( -- )
+	;tiles/sign-triangle .Screen/addr DEO2
+
+	#0040 .Screen/x DEO2
+	#0030 .Screen/y DEO2
+
+	#42 .Screen/sprite DEO
+RTN
+
+@draw-saw-sign ( -- )
+	;tiles/sign-saw .Screen/addr DEO2
+
+	#0050 .Screen/x DEO2
+	#0030 .Screen/y DEO2
+
+	#42 .Screen/sprite DEO
+RTN
+
+@draw-square-sign ( -- )
+	;tiles/sign-square .Screen/addr DEO2
+
+	#0060 .Screen/x DEO2
+	#0030 .Screen/y DEO2
+
+	#42 .Screen/sprite DEO
+RTN
+
+@render-indicators ( -- )
+	.waves LDZ ( load wave byte )
+
+	( sustain indicator )
+	;tiles/round-bulb .Screen/addr DEO2
+
+	DUP #04 SFT #01 EQU ,&sus-on JCN
+	SUS-POS #42 .Screen/sprite DEO ,&waveforms JMP
+	&sus-on SUS-POS #43 .Screen/sprite DEO
+
+	&waveforms
+	#40 SFT #04 SFT
+	( wave form indicators )
+	;tiles/round-bulb .Screen/addr DEO2
+
+	( check sine: 0000 1000 )
+	DUP #08 EQU ,&sine-on JCN
+	SINE-POS #42 .Screen/sprite DEO ,&tri JMP
+	&sine-on SINE-POS #43 .Screen/sprite DEO
+
+	&tri
+	( check triangle: 0000 0100 )
+	DUP #04 EQU ,&tri-on JCN
+	TRI-POS #42 .Screen/sprite DEO ,&saw JMP
+	&tri-on TRI-POS #43 .Screen/sprite DEO
+
+	&saw
+	( check saw: 0000 0010 )
+	DUP #02 EQU ,&saw-on JCN
+	SAW-POS #42 .Screen/sprite DEO ,&square JMP
+	&saw-on SAW-POS #43 .Screen/sprite DEO
+
+	&square
+	( check square: 0000 0001 )
+	DUP #01 EQU ,&square-on JCN
+	SQUARE-POS #42 .Screen/sprite DEO ,&end JMP
+	&square-on SQUARE-POS #43 .Screen/sprite DEO
+
+	&end
+	POP
+RTN
+
+@draw-piano-key ( -- ) 
+	( draw white keys )
+	C ;render-key JSR2
+	D ;render-key JSR2
+	E ;render-key JSR2
+	F ;render-key JSR2
+	G ;render-key JSR2
+	A ;render-key JSR2
+	B ;render-key JSR2
+
+	( draw black keys )
+	d ;render-key JSR2
+	e ;render-key JSR2
+	g ;render-key JSR2
+	a ;render-key JSR2
+	b ;render-key JSR2
+RTN
+
+@render-key ( key-note -- )
+	;tiles/piano-key .Screen/addr DEO2
+
+	DUP C EQU ,&major-c JCN
+	DUP D EQU ,&major-d JCN
+	DUP E EQU ,&major-e JCN
+	DUP F EQU ,&major-f JCN
+	DUP G EQU ,&major-g JCN
+	DUP A EQU ,&major-a JCN
+	DUP B EQU ,&major-b JCN
+
+	DUP d EQU ,&minor-d JCN
+	DUP e EQU ,&minor-e JCN
+	DUP g EQU ,&minor-g JCN
+	DUP a EQU ,&minor-a JCN
+	DUP b EQU ,&minor-b JCN
+	POP RTN ( <-- pseudo end jump )
+
+	&major-c #0018 ,&major JMP
+
+	&major-d #0020 ,&major JMP
+
+	&major-e #0028 ,&major JMP
+
+	&major-f #0030 ,&major JMP
+
+	&major-g #0038 ,&major JMP
+
+	&major-a #0040 ,&major JMP
+
+	&major-b #0048 ,&major JMP
+
+	&minor-d #001c ,&minor JMP
+
+	&minor-e #0024 ,&minor JMP
+
+	&minor-g #0034 ,&minor JMP
+
+	&minor-a #003c ,&minor JMP
+
+	&minor-b #0044 ,&minor JMP
+
+	&major
+		#0060 SET-POS 
+		#41 .Screen/sprite DEO
+		POP ,&end JMP
+
+	&minor
+		#0058 SET-POS
+		#42 .Screen/sprite DEO
+		POP
+
+	&end
+RTN
+
+@draw-octave-controller ( -- )
+	;tiles/octave-up .Screen/addr DEO2
+
+	#0060 .Screen/x DEO2
+	#0058 .Screen/y DEO2
+
+	#43 .Screen/sprite DEO
+
+	#0060 .Screen/x DEO2
+	#0060 .Screen/y DEO2
+
+	#63 .Screen/sprite DEO
+RTN
